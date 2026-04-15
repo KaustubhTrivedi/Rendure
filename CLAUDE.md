@@ -234,7 +234,8 @@ Default modes are in `modes/` (English). Additional language-specific modes are 
 
 ### CV Source of Truth
 
-- `cv.md` in project root is the canonical CV
+- `cv.yaml` in project root is the canonical CV for PDF generation (RenderCV format, `design: theme: sb2nov`)
+- `cv.md` in project root is the prose CV used for offer evaluation context and the `oferta` mode
 - `article-digest.md` has detailed proof points (optional)
 - **NEVER hardcode metrics** -- read them from these files at evaluation time
 

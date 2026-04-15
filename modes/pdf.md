@@ -1,179 +1,188 @@
-# Modo: pdf — Generación de PDF ATS-Optimizado
+# Mode: pdf — RenderCV Resume Generation
 
-## Pipeline completo
+## Pipeline
 
-1. Lee `cv.md` como fuentes de verdad
-2. Pide al usuario el JD si no está en contexto (texto o URL)
-3. Extrae 15-20 keywords del JD
-4. Detecta idioma del JD → idioma del CV (EN default)
-5. Detecta ubicación empresa → formato papel:
-   - US/Canada → `letter`
-   - Resto del mundo → `a4`
-6. Detecta arquetipo del rol → adapta framing
-7. Reescribe Professional Summary inyectando keywords del JD + exit narrative bridge ("Built and sold a business. Now applying systems thinking to [domain del JD].")
-8. Selecciona top 3-4 proyectos más relevantes para la oferta
-9. Reordena bullets de experiencia por relevancia al JD
-10. Construye competency grid desde requisitos del JD (6-8 keyword phrases)
-11. Inyecta keywords naturalmente en logros existentes (NUNCA inventa)
-12. Genera HTML completo desde template + contenido personalizado
-13. Lee `name` de `config/profile.yml` → normaliza a kebab-case lowercase (e.g. "John Doe" → "john-doe") → `{candidate}`
-14. Escribe HTML a `/tmp/cv-{candidate}-{company}.html`
-15. Ejecuta: `node generate-pdf.mjs /tmp/cv-{candidate}-{company}.html output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf --format={letter|a4}`
-15. Reporta: ruta del PDF, nº páginas, % cobertura de keywords
+1. Read `cv.yaml` as the base resume (source of truth)
+2. Read `config/profile.yml` for candidate name
+3. Get the JD — from context, pasted text, or URL
+4. Detect paper format from company location: US/Canada → `letter`, elsewhere → `a4`
+5. Run **Stage 1: Tailoring Agent** → produce tailored YAML
+6. Add `design: theme: sb2nov` to the YAML (preserve if already present)
+7. Write YAML to `/tmp/cv-{candidate}-{company}.yaml`
+8. Run **Stage 2: QA Agent** → audit the YAML against the JD
+9. Apply all high-priority improvements to the YAML in-place
+10. Run: `rendercv render /tmp/cv-{candidate}-{company}.yaml -d {abs_project_root}/design.yaml --pdf-path {abs_output_path} --dont-generate-markdown`
+11. Report: PDF path, QA keyword coverage score
+12. Update tracker: change PDF column from ❌ to ✅ if offer is already registered
 
-## Reglas ATS (parseo limpio)
+Where:
+- `{candidate}` = `cv.name` from profile.yml normalized to kebab-case lowercase (e.g. "Kaustubh Trivedi" → "kaustubh-trivedi")
+- `{company}` = company name slug from the JD
+- `{abs_output_path}` = absolute path to `output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf`
 
-- Layout single-column (sin sidebars, sin columnas paralelas)
-- Headers estándar: "Professional Summary", "Work Experience", "Education", "Skills", "Certifications", "Projects"
-- Sin texto en imágenes/SVGs
-- Sin info crítica en headers/footers del PDF (ATS los ignora)
-- UTF-8, texto seleccionable (no rasterizado)
-- Sin tablas anidadas
-- Keywords del JD distribuidas: Summary (top 5), primer bullet de cada rol, Skills section
+---
 
-## Diseño del PDF
+## Stage 1 — Tailoring Agent
 
-- **Fonts**: Space Grotesk (headings, 600-700) + DM Sans (body, 400-500)
-- **Fonts self-hosted**: `fonts/`
-- **Header**: nombre en Space Grotesk 24px bold + línea gradiente `linear-gradient(to right, hsl(187,74%,32%), hsl(270,70%,45%))` 2px + fila de contacto
-- **Section headers**: Space Grotesk 13px, uppercase, letter-spacing 0.05em, color cyan primary
-- **Body**: DM Sans 11px, line-height 1.5
-- **Company names**: color accent purple `hsl(270,70%,45%)`
-- **Márgenes**: 0.6in
-- **Background**: blanco puro
+You are an expert resume optimization system designed to produce a **highly skimmable, recruiter-friendly, ATS-optimized RenderCV YAML resume**.
 
-## Orden de secciones (optimizado "6-second recruiter scan")
+Your output must remain **fully grounded in the provided base resume** and must not fabricate experience.
 
-1. Header (nombre grande, gradiente, contacto, link portfolio)
-2. Professional Summary (3-4 líneas, keyword-dense)
-3. Core Competencies (6-8 keyword phrases en flex-grid)
-4. Work Experience (cronológico inverso)
-5. Projects (top 3-4 más relevantes)
-6. Education & Certifications
-7. Skills (idiomas + técnicos)
+Recruiters typically spend **3–5 seconds** scanning a resume initially. The resume must allow them to immediately understand:
 
-## Estrategia de keyword injection (ético, basado en verdad)
+- What the candidate does
+- Their primary technologies
+- Their impact and seniority
 
-Ejemplos de reformulación legítima:
-- JD dice "RAG pipelines" y CV dice "LLM workflows with retrieval" → cambiar a "RAG pipeline design and LLM orchestration workflows"
-- JD dice "MLOps" y CV dice "observability, evals, error handling" → cambiar a "MLOps and observability: evals, error handling, cost monitoring"
-- JD dice "stakeholder management" y CV dice "collaborated with team" → cambiar a "stakeholder management across engineering, operations, and business"
+### Stage 1a — Job Requirement Extraction
 
-**NUNCA añadir skills que el candidato no tiene. Solo reformular experiencia real con el vocabulario exacto del JD.**
+From the job description extract:
 
-## Template HTML
+- `required_technologies`
+- `preferred_technologies`
+- `responsibilities`
+- `domain_keywords`
+- `soft_skills`
+- `experience_level`
 
-Usar el template en `cv-template.html`. Reemplazar los placeholders `{{...}}` con contenido personalizado:
+### Stage 1b — Resume Capability Mapping
 
-| Placeholder | Contenido |
-|-------------|-----------|
-| `{{LANG}}` | `en` o `es` |
-| `{{PAGE_WIDTH}}` | `8.5in` (letter) o `210mm` (A4) |
-| `{{NAME}}` | (from profile.yml) |
-| `{{PHONE}}` | (from profile.yml — include with its separator only when `profile.yml` has a non-empty `phone` value; omit both `<span>` and `<span class="separator">` otherwise) |
-| `{{EMAIL}}` | (from profile.yml) |
-| `{{LINKEDIN_URL}}` | [from profile.yml] |
-| `{{LINKEDIN_DISPLAY}}` | [from profile.yml] |
-| `{{PORTFOLIO_URL}}` | [from profile.yml] (o /es según idioma) |
-| `{{PORTFOLIO_DISPLAY}}` | [from profile.yml] (o /es según idioma) |
-| `{{LOCATION}}` | [from profile.yml] |
-| `{{SECTION_SUMMARY}}` | Professional Summary / Resumen Profesional |
-| `{{SUMMARY_TEXT}}` | Summary personalizado con keywords |
-| `{{SECTION_COMPETENCIES}}` | Core Competencies / Competencias Core |
-| `{{COMPETENCIES}}` | `<span class="competency-tag">keyword</span>` × 6-8 |
-| `{{SECTION_EXPERIENCE}}` | Work Experience / Experiencia Laboral |
-| `{{EXPERIENCE}}` | HTML de cada trabajo con bullets reordenados |
-| `{{SECTION_PROJECTS}}` | Projects / Proyectos |
-| `{{PROJECTS}}` | HTML de top 3-4 proyectos |
-| `{{SECTION_EDUCATION}}` | Education / Formación |
-| `{{EDUCATION}}` | HTML de educación |
-| `{{SECTION_CERTIFICATIONS}}` | Certifications / Certificaciones |
-| `{{CERTIFICATIONS}}` | HTML de certificaciones |
-| `{{SECTION_SKILLS}}` | Skills / Competencias |
-| `{{SKILLS}}` | HTML de skills |
+From the base YAML identify:
 
-## Canva CV Generation (optional)
+- `programming_languages`
+- `frameworks`
+- `backend_technologies`
+- `infrastructure_tools`
+- `domains`
+- `notable_achievements`
 
-If `config/profile.yml` has `canva_resume_design_id` set, offer the user a choice before generating:
-- **"HTML/PDF (fast, ATS-optimized)"** — existing flow above
-- **"Canva CV (visual, design-preserving)"** — new flow below
+Then determine:
 
-If the user has no `canva_resume_design_id`, skip this prompt and use the HTML/PDF flow.
+- `strong_matches` — skills/experiences that clearly satisfy JD requirements
+- `partial_matches` — hints at capability that could be made more explicit
+- `missing_keywords` — important JD terms absent from the base resume
 
-### Canva workflow
+### Stage 1c — Keyword Gap Analysis
 
-#### Step 1 — Duplicate the base design
+Identify JD keywords missing from the base resume.
 
-a. `export-design` the base design (using `canva_resume_design_id`) as PDF → get download URL
-b. `import-design-from-url` using that download URL → creates a new editable design (the duplicate)
-c. Note the new `design_id` for the duplicate
+Missing keywords may appear **only** in:
+- Skills section (under a "Familiar With" label)
+- `profile` summary (neutral phrasing: "Familiar with", "Exposure to", "Currently exploring")
 
-#### Step 2 — Read the design structure
+They must **NOT** appear inside experience bullet points.
 
-a. `get-design-content` on the new design → returns all text elements (richtexts) with their content
-b. Map text elements to CV sections by content matching:
-   - Look for the candidate's name → header section
-   - Look for "Summary" or "Professional Summary" → summary section
-   - Look for company names from cv.md → experience sections
-   - Look for degree/school names → education section
-   - Look for skill keywords → skills section
-c. If mapping fails, show the user what was found and ask for guidance
+### Stage 1d — Skimmable Resume Generation
 
-#### Step 3 — Generate tailored content
+Generate the tailored RenderCV YAML following these rules:
 
-Same content generation as the HTML flow (Steps 1-11 above):
-- Rewrite Professional Summary with JD keywords + exit narrative
-- Reorder experience bullets by JD relevance
-- Select top competencies from JD requirements
-- Inject keywords naturally (NEVER invent)
+**Profile summary rules:**
+- Clearly state: primary role, years/level of experience, core technology stack
+- Inject strong JD keyword matches naturally
+- Example structure: "Software Engineer specializing in [domain]. Experienced in [tech stack], with a track record of [impact]."
 
-**IMPORTANT — Character budget rule:** Each replacement text MUST be approximately the same length as the original text it replaces (within ±15% character count). If tailored content is longer, condense it. The Canva design has fixed-size text boxes — longer text causes overlapping with adjacent elements. Count the characters in each original element from Step 2 and enforce this budget when generating replacements.
+**Bullet rules (ACTION + TECH + IMPACT):**
+- Maximum 1–2 lines per bullet
+- Lead with a strong verb
+- Put important technologies early in the sentence
+- Order bullets within each role: 1) relevance to JD, 2) measurable impact, 3) technical complexity
+- Do not alter metrics
+- Do not fabricate any technology, project, or responsibility
 
-#### Step 4 — Apply edits
+**Skills section structure:**
+- Programming Languages
+- Backend & Frameworks
+- Frontend
+- Infrastructure & DevOps
+- Databases
+- Testing & Quality
+- Methodologies
+- Familiar With ← only section that may contain technologies not in the base resume
 
-a. `start-editing-transaction` on the duplicate design
-b. `perform-editing-operations` with `find_and_replace_text` for each section:
-   - Replace summary text with tailored summary
-   - Replace each experience bullet with reordered/rewritten bullets
-   - Replace competency/skills text with JD-matched terms
-   - Replace project descriptions with top relevant projects
-c. **Reflow layout after text replacement:**
-   After applying all text replacements, the text boxes auto-resize but neighboring elements stay in place. This causes uneven spacing between work experience sections. Fix this:
-   1. Read the updated element positions and dimensions from the `perform-editing-operations` response
-   2. For each work experience section (top to bottom), calculate where the bullets text box ends: `end_y = top + height`
-   3. The next section's header should start at `end_y + consistent_gap` (use the original gap from the template, typically ~30px)
-   4. Use `position_element` to move the next section's date, company name, role title, and bullets elements to maintain even spacing
-   5. Repeat for all work experience sections
-d. **Verify layout before commit:**
-   - `get-design-thumbnail` with the transaction_id and page_index=1
-   - Visually inspect the thumbnail for: text overlapping, uneven spacing, text cut off, text too small
-   - If issues remain, adjust with `position_element`, `resize_element`, or `format_text`
-   - Repeat until layout is clean
-d. Show the user the final preview and ask for approval
-e. `commit-editing-transaction` to save (ONLY after user approval)
+**ATS rules:**
+- Distribute important JD keywords across: profile summary, skills section, experience bullets (only if grounded)
+- Avoid keyword stuffing
+- Use exact terminology from the JD where possible (e.g. if JD says "RAG pipelines", use "RAG pipelines" not "retrieval workflows")
 
-#### Step 5 — Export and download PDF
+**Output:** Return only the complete RenderCV YAML. No explanations, no markdown fences, no analysis output.
 
-a. `export-design` the duplicate as PDF (format: a4 or letter based on JD location)
-b. **IMMEDIATELY** download the PDF using Bash:
-   ```bash
-   curl -sL -o "output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf" "{download_url}"
-   ```
-   The export URL is a pre-signed S3 link that expires in ~2 hours. Download it right away.
-c. Verify the download:
-   ```bash
-   file output/cv-{candidate}-{company}-canva-{YYYY-MM-DD}.pdf
-   ```
-   Must show "PDF document". If it shows XML or HTML, the URL expired — re-export and retry.
-d. Report: PDF path, file size, Canva design URL (for manual tweaking)
+---
 
-#### Error handling
+## Stage 2 — QA Agent
 
-- If `import-design-from-url` fails → fall back to HTML/PDF pipeline with message
-- If text elements can't be mapped → warn user, show what was found, ask for manual mapping
-- If `find_and_replace_text` finds no matches → try broader substring matching
-- Always provide the Canva design URL so the user can edit manually if auto-edit fails
+You are a resume quality assurance and ATS audit system. Analyze the tailored YAML against the job description across five dimensions.
 
-## Post-generación
+### QA Step 1 — Alignment Analysis
 
-Actualizar tracker si la oferta ya está registrada: cambiar PDF de ❌ a ✅.
+Compare JD requirements vs resume signals:
+
+- `strong_matches` — clearly matching skills/experience
+- `partial_matches` — hinted but could be stronger
+- `missing_keywords` — important JD terms absent from the resume
+- `weak_signals` — relevant experience that is undersold
+
+### QA Step 2 — ATS Check
+
+- `keyword_coverage_score` (0–100 estimate)
+- `missing_ats_keywords` — JD keywords that should appear somewhere
+- `keyword_placement_issues` — keywords buried or poorly placed
+- `keyword_stuffing_risk` — unnatural repetition
+
+### QA Step 3 — Scannability Test
+
+Simulate a 3–5 second recruiter scan:
+
+- `3_second_impression` — what a recruiter immediately infers
+- `clarity_of_role_identity` — is the candidate's role obvious?
+- `tech_stack_visibility` — are key technologies immediately visible?
+- `bullet_quality_issues` — bullets that are too long, vague, missing tech, or missing impact
+
+### QA Step 4 — Improvement Instructions
+
+Provide structured instructions for improving the resume:
+
+- `high_priority_changes` — structural fixes with significant impact
+- `medium_priority_changes` — alignment improvements
+- `keyword_insertion_opportunities` — where missing keywords could be safely added
+- `bullet_rewrite_targets` — specific bullets to rewrite (ACTION + TECH + IMPACT pattern)
+- `summary_improvement_advice`
+- `skills_section_improvements`
+
+**Rules:**
+1. Do not fabricate information
+2. Do not rewrite the entire resume — provide targeted instructions only
+3. Every suggestion must be actionable and grounded
+
+---
+
+## Post-QA Revision
+
+After the QA agent completes, apply **all high-priority changes** to the YAML:
+
+- Rewrite flagged bullets following `ACTION + TECH + IMPACT`
+- Insert missing ATS keywords in safe locations (skills section or summary only)
+- Improve summary if flagged
+- Restructure skills section if flagged
+
+Then write the final YAML to `/tmp/cv-{candidate}-{company}.yaml` and render.
+
+---
+
+## Rendering
+
+```bash
+rendercv render /tmp/cv-{candidate}-{company}.yaml \
+  -d /absolute/path/to/career-ops/design.yaml \
+  --pdf-path /absolute/path/to/career-ops/output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf \
+  --dont-generate-markdown
+```
+
+Use the absolute path to `design.yaml` in the project root. Do not embed a `design` block in the tailored YAML.
+
+---
+
+## Post-Generation
+
+- Report: PDF path + QA keyword coverage score
+- Update tracker if the offer is already registered: change PDF column ❌ → ✅
+- Save the tailored YAML alongside the PDF as `output/cv-{candidate}-{company}-{YYYY-MM-DD}.yaml` for future reference

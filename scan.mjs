@@ -3,7 +3,8 @@
 /**
  * scan.mjs — Zero-token portal scanner
  *
- * Fetches Greenhouse, Ashby, and Lever APIs directly, applies title
+ * Fetches Greenhouse, Ashby, and Lever APIs directly when possible,
+ * falls back to Playwright for generic careers pages, applies title
  * filters from portals.yml, deduplicates against existing history,
  * and appends new offers to pipeline.md + scan-history.tsv.
  *
@@ -16,6 +17,7 @@
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
+import { chromium } from 'playwright';
 import yaml from 'js-yaml';
 const parseYaml = yaml.load;
 
@@ -30,14 +32,24 @@ const APPLICATIONS_PATH = 'data/applications.md';
 mkdirSync('data', { recursive: true });
 
 const CONCURRENCY = 10;
+const PLAYWRIGHT_CONCURRENCY = 6;
 const FETCH_TIMEOUT_MS = 10_000;
+const PLAYWRIGHT_NAV_TIMEOUT_MS = 20_000;
+const PLAYWRIGHT_HYDRATE_MS = 2_500;
 
 // ── API detection ───────────────────────────────────────────────────
 
 function detectApi(company) {
-  // Greenhouse: explicit api field
-  if (company.api && company.api.includes('greenhouse')) {
-    return { type: 'greenhouse', url: company.api };
+  if (company.api) {
+    if (company.api.includes('boards-api.greenhouse.io')) {
+      return { type: 'greenhouse', url: company.api };
+    }
+    if (company.api.includes('api.ashbyhq.com')) {
+      return { type: 'ashby', url: company.api };
+    }
+    if (company.api.includes('api.lever.co')) {
+      return { type: 'lever', url: company.api };
+    }
   }
 
   const url = company.careers_url || '';
@@ -106,6 +118,252 @@ function parseLever(json, companyName) {
 
 const PARSERS = { greenhouse: parseGreenhouse, ashby: parseAshby, lever: parseLever };
 
+// ── Playwright careers page scan ────────────────────────────────────
+
+function uniqueBy(items, keyFn) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = keyFn(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    const distance = Math.max(600, Math.floor(window.innerHeight * 0.8));
+    let unchanged = 0;
+    let lastHeight = 0;
+
+    for (let i = 0; i < 10; i++) {
+      window.scrollBy(0, distance);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      const currentHeight = document.body?.scrollHeight || 0;
+      if (currentHeight === lastHeight) unchanged += 1;
+      else unchanged = 0;
+      lastHeight = currentHeight;
+
+      if (unchanged >= 2) break;
+    }
+
+    window.scrollTo(0, 0);
+  });
+}
+
+async function extractCareersPageJobs(page, companyName) {
+  const rawJobs = await page.evaluate(({ companyName }) => {
+    const ATS_PATTERNS = [
+      'jobs.ashbyhq.com',
+      'job-boards.greenhouse.io',
+      'job-boards.eu.greenhouse.io',
+      'boards.greenhouse.io',
+      'jobs.lever.co',
+      'api.lever.co',
+      'myworkdayjobs.com',
+      'workday.com',
+      'workable.com',
+      'smartrecruiters.com',
+      'jobvite.com',
+      'icims.com',
+      'bamboohr.com',
+      'teamtailor.com',
+      '/careers/',
+      '/career/',
+      '/jobs/',
+      '/job/',
+      '/positions/',
+      '/openings/',
+      '/vacancies/',
+      '/vacancy/',
+      '/role/',
+      '/roles/',
+    ];
+    const NOISE_PATTERNS = [
+      'privacy',
+      'cookie',
+      'terms',
+      'linkedin',
+      'instagram',
+      'facebook',
+      'twitter',
+      'x.com',
+      'youtube',
+      'benefits',
+      'mission',
+      'about us',
+      'our values',
+      'blog',
+      'press',
+      'newsroom',
+      'investor',
+      'sign in',
+      'log in',
+      'login',
+      'join our talent community',
+      'talent community',
+      'meet the team',
+      'learn more',
+      'contact us',
+      'read more',
+    ];
+
+    function normalizeText(value) {
+      return (value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function firstMeaningfulLine(value) {
+      const lines = (value || '')
+        .split('\n')
+        .map((line) => normalizeText(line))
+        .filter(Boolean);
+      return lines[0] || '';
+    }
+
+    function isVisible(element) {
+      if (!element || element.closest('nav, header, footer')) return false;
+      if (element.closest('[aria-hidden="true"], [hidden]')) return false;
+      const style = window.getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      return Array.from(element.getClientRects()).some((rect) => rect.width > 0 && rect.height > 0);
+    }
+
+    function parseJobPostingLocation(jobLocation) {
+      const locations = Array.isArray(jobLocation) ? jobLocation : [jobLocation];
+      return locations
+        .map((entry) => {
+          const address = entry?.address || entry?.addressLocality || entry;
+          if (typeof address === 'string') return normalizeText(address);
+          if (!address || typeof address !== 'object') return '';
+          return normalizeText([
+            address.addressLocality,
+            address.addressRegion,
+            address.addressCountry,
+          ].filter(Boolean).join(', '));
+        })
+        .filter(Boolean)
+        .join(' | ');
+    }
+
+    function collectStructuredData() {
+      const results = [];
+      const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+
+      function walk(node) {
+        if (!node) return;
+        if (Array.isArray(node)) {
+          node.forEach(walk);
+          return;
+        }
+        if (typeof node !== 'object') return;
+        if (node['@type'] === 'JobPosting') {
+          results.push({
+            title: normalizeText(node.title),
+            url: normalizeText(node.url),
+            location: parseJobPostingLocation(node.jobLocation),
+            source: 'structured-data',
+            score: 10,
+          });
+        }
+        if (node['@graph']) walk(node['@graph']);
+      }
+
+      for (const script of scripts) {
+        try {
+          walk(JSON.parse(script.textContent || 'null'));
+        } catch {}
+      }
+
+      return results;
+    }
+
+    function collectLinkCandidates() {
+      const anchors = Array.from(document.querySelectorAll('a[href]'));
+      return anchors
+        .filter(isVisible)
+        .map((anchor) => {
+          const href = anchor.getAttribute('href') || '';
+          if (!href || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
+            return null;
+          }
+
+          const url = new URL(href, window.location.href).href;
+          const label = normalizeText([
+            anchor.innerText,
+            anchor.getAttribute('aria-label'),
+            anchor.getAttribute('title'),
+          ].filter(Boolean).join(' '));
+
+          const container = anchor.closest('article, li, tr, [role="listitem"], .opening, .job, .position, .role, section, div');
+          const context = normalizeText(container?.innerText || '');
+          const text = firstMeaningfulLine(label || context);
+          const lowerText = `${text} ${context} ${url}`.toLowerCase();
+
+          if (!text) return null;
+          if (NOISE_PATTERNS.some((pattern) => lowerText.includes(pattern))) return null;
+
+          let score = 0;
+          if (ATS_PATTERNS.some((pattern) => lowerText.includes(pattern))) score += 3;
+          if (/(job|jobs|career|careers|position|positions|opening|openings|vacanc|role|opportunit)/i.test(lowerText)) score += 2;
+          if (text.length >= 8 && text.length <= 120) score += 1;
+          if (/remote|dublin|ireland|cork|galway|limerick|hybrid|onsite/i.test(context)) score += 1;
+
+          if (score < 3) return null;
+
+          const locationMatch = context.match(
+            /\b(remote|dublin|ireland|cork|galway|limerick|hybrid|onsite|emea|eu|europe)\b/i
+          );
+
+          return {
+            title: text,
+            url,
+            location: normalizeText(locationMatch?.[0] || ''),
+            source: 'page-links',
+            score,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    const company = normalizeText(companyName);
+    return [...collectStructuredData(), ...collectLinkCandidates()].map((job) => ({
+      ...job,
+      company,
+    }));
+  }, { companyName });
+
+  return uniqueBy(
+    rawJobs
+      .map((job) => ({
+        title: (job.title || '').trim(),
+        url: (job.url || '').trim(),
+        company: companyName,
+        location: (job.location || '').trim(),
+        source: job.source || 'playwright',
+        score: Number(job.score) || 0,
+      }))
+      .filter((job) => job.title && job.url),
+    (job) => `${job.url}::${job.title.toLowerCase()}`
+  ).sort((a, b) => b.score - a.score);
+}
+
+async function scanCompanyViaBrowser(browser, company) {
+  const page = await browser.newPage();
+
+  try {
+    await page.goto(company.careers_url, {
+      waitUntil: 'domcontentloaded',
+      timeout: PLAYWRIGHT_NAV_TIMEOUT_MS,
+    });
+    await page.waitForTimeout(PLAYWRIGHT_HYDRATE_MS);
+    await autoScroll(page);
+    return await extractCareersPageJobs(page, company.name);
+  } finally {
+    await page.close();
+  }
+}
+
 // ── Fetch with timeout ──────────────────────────────────────────────
 
 async function fetchJson(url) {
@@ -123,13 +381,19 @@ async function fetchJson(url) {
 // ── Title filter ────────────────────────────────────────────────────
 
 function buildTitleFilter(titleFilter) {
-  const positive = (titleFilter?.positive || []).map(k => k.toLowerCase());
-  const negative = (titleFilter?.negative || []).map(k => k.toLowerCase());
+  const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const compileKeyword = (keyword) => {
+    const trimmed = keyword.trim();
+    if (!trimmed) return null;
+    return new RegExp(`(^|[^a-z0-9])${escapeRegex(trimmed.toLowerCase())}([^a-z0-9]|$)`, 'i');
+  };
+  const positive = (titleFilter?.positive || []).map(compileKeyword).filter(Boolean);
+  const negative = (titleFilter?.negative || []).map(compileKeyword).filter(Boolean);
 
   return (title) => {
     const lower = title.toLowerCase();
-    const hasPositive = positive.length === 0 || positive.some(k => lower.includes(k));
-    const hasNegative = negative.some(k => lower.includes(k));
+    const hasPositive = positive.length === 0 || positive.some((pattern) => pattern.test(lower));
+    const hasNegative = negative.some((pattern) => pattern.test(lower));
     return hasPositive && !hasNegative;
   };
 }
@@ -264,17 +528,22 @@ async function main() {
   const config = parseYaml(readFileSync(PORTALS_PATH, 'utf-8'));
   const companies = config.tracked_companies || [];
   const titleFilter = buildTitleFilter(config.title_filter);
+  const companyKey = (company) => `${company.name}::${company.careers_url || ''}::${company.api || ''}`;
 
-  // 2. Filter to enabled companies with detectable APIs
-  const targets = companies
+  // 2. Filter enabled companies and split into API/browser scan paths
+  const enabledCompanies = companies
     .filter(c => c.enabled !== false)
-    .filter(c => !filterCompany || c.name.toLowerCase().includes(filterCompany))
+    .filter(c => !filterCompany || c.name.toLowerCase().includes(filterCompany));
+  const apiTargets = enabledCompanies
     .map(c => ({ ...c, _api: detectApi(c) }))
     .filter(c => c._api !== null);
+  const apiTargetKeys = new Set(apiTargets.map(companyKey));
+  const browserTargets = enabledCompanies.filter(c => !apiTargetKeys.has(companyKey(c)));
+  const queuedBrowserKeys = new Set(browserTargets.map(companyKey));
 
-  const skippedCount = companies.filter(c => c.enabled !== false).length - targets.length;
-
-  console.log(`Scanning ${targets.length} companies via API (${skippedCount} skipped — no API detected)`);
+  console.log(
+    `Scanning ${apiTargets.length} companies via API, ${browserTargets.length} via Playwright`
+  );
   if (dryRun) console.log('(dry run — no files will be written)\n');
 
   // 3. Load dedup sets
@@ -288,39 +557,74 @@ async function main() {
   let totalDupes = 0;
   const newOffers = [];
   const errors = [];
+  let apiScanned = 0;
+  let browserScanned = 0;
 
-  const tasks = targets.map(company => async () => {
+  function processJobs(jobs, source) {
+    totalFound += jobs.length;
+
+    for (const job of jobs) {
+      if (!titleFilter(job.title)) {
+        totalFiltered++;
+        continue;
+      }
+      if (seenUrls.has(job.url)) {
+        totalDupes++;
+        continue;
+      }
+      const key = `${job.company.toLowerCase()}::${job.title.toLowerCase()}`;
+      if (seenCompanyRoles.has(key)) {
+        totalDupes++;
+        continue;
+      }
+      seenUrls.add(job.url);
+      seenCompanyRoles.add(key);
+      newOffers.push({ ...job, source });
+    }
+  }
+
+  const tasks = apiTargets.map(company => async () => {
     const { type, url } = company._api;
     try {
       const json = await fetchJson(url);
       const jobs = PARSERS[type](json, company.name);
-      totalFound += jobs.length;
-
-      for (const job of jobs) {
-        if (!titleFilter(job.title)) {
-          totalFiltered++;
-          continue;
-        }
-        if (seenUrls.has(job.url)) {
-          totalDupes++;
-          continue;
-        }
-        const key = `${job.company.toLowerCase()}::${job.title.toLowerCase()}`;
-        if (seenCompanyRoles.has(key)) {
-          totalDupes++;
-          continue;
-        }
-        // Mark as seen to avoid intra-scan dupes
-        seenUrls.add(job.url);
-        seenCompanyRoles.add(key);
-        newOffers.push({ ...job, source: `${type}-api` });
-      }
+      apiScanned++;
+      processJobs(jobs, `${type}-api`);
     } catch (err) {
-      errors.push({ company: company.name, error: err.message });
+      if (!company.careers_url) {
+        errors.push({ company: company.name, error: err.message });
+        return;
+      }
+      const key = companyKey(company);
+      if (!queuedBrowserKeys.has(key)) {
+        browserTargets.push(company);
+        queuedBrowserKeys.add(key);
+      }
     }
   });
 
   await parallelFetch(tasks, CONCURRENCY);
+
+  if (browserTargets.length > 0) {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const browserTasks = browserTargets.map(company => async () => {
+        try {
+          const jobs = await scanCompanyViaBrowser(browser, company);
+          browserScanned++;
+          processJobs(jobs, 'playwright-careers');
+        } catch (err) {
+          errors.push({ company: company.name, error: err.message });
+        }
+      });
+
+      // Run multiple pages in parallel within one browser so slow portals
+      // do not force the entire Playwright pass into a serial crawl.
+      await parallelFetch(browserTasks, PLAYWRIGHT_CONCURRENCY);
+    } finally {
+      await browser.close();
+    }
+  }
 
   // 5. Write results
   if (!dryRun && newOffers.length > 0) {
@@ -332,7 +636,9 @@ async function main() {
   console.log(`\n${'━'.repeat(45)}`);
   console.log(`Portal Scan — ${date}`);
   console.log(`${'━'.repeat(45)}`);
-  console.log(`Companies scanned:     ${targets.length}`);
+  console.log(`Companies scanned:     ${apiScanned + browserScanned}`);
+  console.log(`  API:                 ${apiScanned}`);
+  console.log(`  Playwright:          ${browserScanned}`);
   console.log(`Total jobs found:      ${totalFound}`);
   console.log(`Filtered by title:     ${totalFiltered} removed`);
   console.log(`Duplicates:            ${totalDupes} skipped`);
