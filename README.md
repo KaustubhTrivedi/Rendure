@@ -3,10 +3,6 @@
 [English](README.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [한국어](README.ko-KR.md) | [日本語](README.ja.md) | [Русский](README.ru.md) | [繁體中文](README.zh-TW.md)
 
 <p align="center">
-  <a href="https://x.com/santifer"><img src="docs/hero-banner.jpg" alt="Rendure — Multi-Agent Job Search System" width="800"></a>
-</p>
-
-<p align="center">
   <em>I spent months applying to jobs the hard way. So I engineered the system I wish I had.</em><br>
   Companies use AI to filter candidates. <strong>I gave candidates AI to <em>choose</em> companies.</strong><br>
   <em>Now it's open source.</em>
@@ -30,12 +26,6 @@
   <img src="https://img.shields.io/badge/KO-white?style=flat" alt="KO">
   <img src="https://img.shields.io/badge/JA-red?style=flat" alt="JA">
   <img src="https://img.shields.io/badge/ZH--TW-blue?style=flat" alt="ZH-TW">
-</p>
-
----
-
-<p align="center">
-  <img src="docs/demo.gif" alt="Rendure Demo" width="800">
 </p>
 
 <p align="center"><strong>740+ job listings evaluated · 100+ personalized CVs · 1 dream role landed</strong></p>
@@ -250,16 +240,6 @@ Rendure is forked from Career-Ops by Santiago Fernández de Valderrama.
 - Original author and project: [santifer.io](https://santifer.io), `https://github.com/santifer/career-ops`
 - This fork keeps the upstream workflow philosophy, documentation lineage, and MIT license attribution.
 - Fork-specific work focuses on RenderCV-based tailoring, QA, and updated resume templates.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=santifer%2Fcareer-ops&type=timeline&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=santifer/career-ops&type=timeline&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=santifer/career-ops&type=timeline&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=santifer/career-ops&type=timeline&legend=top-left" />
- </picture>
-</a>
 
 ## Disclaimer
 
