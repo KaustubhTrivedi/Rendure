@@ -1,0 +1,54 @@
+cv:
+  name: Alex Chen
+  headline: Full Stack Engineer
+  location: Berlin, Germany
+  email: alex.chen@example.com
+  phone: "+49 30 5555 1234"
+  website: https://alexchen.dev
+  social_networks:
+    - network: LinkedIn
+      username: alexchen-dev
+    - network: GitHub
+      username: alexchen-dev
+
+  sections:
+    profile:
+      - Full Stack Engineer with experience shipping production web applications across TypeScript, React, Node.js, and Go. Strong track record improving performance, reliability, and delivery speed in customer-facing products.
+
+    skills:
+      - label: Languages
+        details: TypeScript, JavaScript, Go, Python, SQL
+      - label: Frontend
+        details: React, Next.js, HTML, CSS, Tailwind CSS
+      - label: Backend
+        details: Node.js, Express, REST APIs, PostgreSQL, Redis
+      - label: Infrastructure
+        details: Docker, GitHub Actions, AWS, Observability
+
+    experience:
+      - company: Northstar Labs
+        position: Full Stack Engineer
+        start_date: 2022-01
+        end_date: 2024-06
+        location: Remote
+        highlights:
+          - Built customer-facing workflows in React and Node.js used by 8,000+ monthly active users.
+          - Improved API response times by 28% through query tuning, caching, and endpoint refactors.
+          - Added CI/CD automation that reduced deployment time from 30 minutes to under 10.
+
+    projects:
+      - name: Agent Workspace
+        summary: Personal RAG and workflow orchestration sandbox for evaluating AI product patterns.
+        highlights:
+          - Built grounded retrieval workflows for document-aware assistants.
+          - Ran self-hosted experiments focused on reliability, traceability, and token efficiency.
+
+    education:
+      - institution: Technical University of Munich
+        area: Computer Science
+        degree: MSc
+        start_date: 2019-10
+        end_date: 2021-09
+
+design:
+  theme: sb2nov

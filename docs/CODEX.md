@@ -1,6 +1,6 @@
 # Codex Setup
 
-Career-Ops supports Codex through the root `AGENTS.md` file.
+Rendure supports Codex through the root `AGENTS.md` file.
 
 If your Codex client reads project instructions automatically, `AGENTS.md`
 is enough for routing and behavior. Codex should reuse the same checked-in
@@ -44,7 +44,7 @@ npx playwright install chromium
 | Project evaluation | `modes/project.md` |
 
 The key point: Codex support is additive. It should route into the existing
-Career-Ops modes and scripts rather than introducing a parallel automation
+Rendure modes and scripts rather than introducing a parallel automation
 layer.
 
 ## Behavioral Rules

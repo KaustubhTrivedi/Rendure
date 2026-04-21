@@ -44,7 +44,7 @@ PRs without a corresponding issue may be closed if they don't align with the pro
 - Keep modes language-agnostic when possible (Claude handles both EN and ES)
 - Scripts should handle missing files gracefully (check `existsSync` before `readFileSync`)
 - Dashboard changes require `go build` — test with real data before submitting
-- Don't commit personal data (cv.md, profile.yml, applications.md, reports/)
+- Don't commit personal data (`cv.md`, `cv.yaml`, `config/profile.yml`, `interview-prep/story-bank.md`, `applications.md`, `reports/`)
 
 ## What we do NOT accept
 

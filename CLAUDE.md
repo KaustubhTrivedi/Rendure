@@ -13,7 +13,7 @@ The portfolio that goes with this system is also open source: [cv-santiago](http
 There are two layers. Read `DATA_CONTRACT.md` for the full list.
 
 **User Layer (NEVER auto-updated, personalization goes HERE):**
-- `cv.md`, `config/profile.yml`, `modes/_profile.md`, `article-digest.md`, `portals.yml`
+- `cv.md`, `cv.yaml`, `config/profile.yml`, `modes/_profile.md`, `article-digest.md`, `portals.yml`
 - `data/*`, `reports/*`, `output/*`, `interview-prep/*`
 
 **System Layer (auto-updatable, DON'T put user data here):**
@@ -95,9 +95,10 @@ When using [OpenCode](https://opencode.ai), the following slash commands are ava
 **Before doing ANYTHING else, check if the system is set up.** Run these checks silently every time a session starts:
 
 1. Does `cv.md` exist?
-2. Does `config/profile.yml` exist (not just profile.example.yml)?
-3. Does `modes/_profile.md` exist (not just _profile.template.md)?
-4. Does `portals.yml` exist (not just templates/portals.example.yml)?
+2. Does `cv.yaml` exist?
+3. Does `config/profile.yml` exist (not just profile.example.yml)?
+4. Does `modes/_profile.md` exist (not just _profile.template.md)?
+5. Does `portals.yml` exist (not just templates/portals.example.yml)?
 
 If `modes/_profile.md` is missing, copy from `modes/_profile.template.md` silently. This is the user's customization file — it will never be overwritten by updates.
 
@@ -113,6 +114,8 @@ If `cv.md` is missing, ask:
 > Which do you prefer?"
 
 Create `cv.md` from whatever they provide. Make it clean markdown with standard sections (Summary, Experience, Projects, Education, Skills).
+
+If `cv.yaml` is missing, copy `examples/cv.example.yaml` to `cv.yaml` and ask the user to replace the sample data with their own RenderCV content.
 
 #### Step 2: Profile (required)
 If `config/profile.yml` is missing, copy from `config/profile.example.yml` and then ask:

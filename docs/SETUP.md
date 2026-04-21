@@ -11,7 +11,7 @@
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/santifer/career-ops.git
+git clone https://github.com/KaustubhTrivedi/career-ops.git
 cd career-ops
 npm install
 npx playwright install chromium   # Required for PDF generation
@@ -21,13 +21,16 @@ npx playwright install chromium   # Required for PDF generation
 
 ```bash
 cp config/profile.example.yml config/profile.yml
+cp examples/cv-example.md cv.md
+cp examples/cv.example.yaml cv.yaml
+cp examples/story-bank.example.md interview-prep/story-bank.md
 ```
 
 Edit `config/profile.yml` with your personal details: name, email, target roles, narrative, proof points.
 
 ### 3. Add your CV
 
-Create `cv.md` in the project root with your full CV in markdown format. This is the source of truth for all evaluations and PDFs.
+Use `cv.md` for prose evaluation context and `cv.yaml` for RenderCV PDF generation. Start by copying the example files, then replace them with your own content.
 
 (Optional) Create `article-digest.md` with proof points from your portfolio projects/articles.
 
@@ -50,7 +53,7 @@ Open Claude Code in this directory:
 claude
 ```
 
-Then paste a job offer URL or description. Career-ops will automatically evaluate it, generate a report, create a tailored PDF, and track it.
+Then paste a job offer URL or description. Rendure will automatically evaluate it, generate a report, create a tailored PDF, and track it.
 
 ## Available Commands
 

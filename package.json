@@ -1,7 +1,7 @@
 {
-  "name": "career-ops",
+  "name": "rendure",
   "version": "1.0.0",
-  "description": "AI-powered job search pipeline built on Claude Code",
+  "description": "Rendure: an AI-powered job search pipeline forked from career-ops",
   "scripts": {
     "doctor": "node doctor.mjs",
     "verify": "node verify-pipeline.mjs",
@@ -23,11 +23,11 @@
     "career",
     "automation"
   ],
-  "author": "Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
-  "homepage": "https://santifer.io",
+  "author": "Kaustubh Trivedi (fork), original by Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
+  "homepage": "https://github.com/KaustubhTrivedi/career-ops",
   "repository": {
     "type": "git",
-    "url": "https://github.com/santifer/career-ops"
+    "url": "https://github.com/KaustubhTrivedi/career-ops"
   },
   "license": "MIT",
   "dependencies": {

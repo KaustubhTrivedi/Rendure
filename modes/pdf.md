@@ -16,7 +16,7 @@
 12. Update tracker: change PDF column from ❌ to ✅ if offer is already registered
 
 Where:
-- `{candidate}` = `cv.name` from profile.yml normalized to kebab-case lowercase (e.g. "Kaustubh Trivedi" → "kaustubh-trivedi")
+- `{candidate}` = `cv.name` from profile.yml normalized to kebab-case lowercase (e.g. "Alex Chen" → "alex-chen")
 - `{company}` = company name slug from the JD
 - `{abs_output_path}` = absolute path to `output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf`
 

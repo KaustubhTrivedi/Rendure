@@ -1,9 +1,9 @@
-# Career-Ops
+# Rendure
 
 [English](README.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [한국어](README.ko-KR.md) | [日本語](README.ja.md) | [Русский](README.ru.md) | [繁體中文](README.zh-TW.md)
 
 <p align="center">
-  <a href="https://x.com/santifer"><img src="docs/hero-banner.jpg" alt="Career-Ops — Multi-Agent Job Search System" width="800"></a>
+  <a href="https://x.com/santifer"><img src="docs/hero-banner.jpg" alt="Rendure — Multi-Agent Job Search System" width="800"></a>
 </p>
 
 <p align="center">
@@ -35,7 +35,7 @@
 ---
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Career-Ops Demo" width="800">
+  <img src="docs/demo.gif" alt="Rendure Demo" width="800">
 </p>
 
 <p align="center"><strong>740+ job listings evaluated · 100+ personalized CVs · 1 dream role landed</strong></p>
@@ -44,7 +44,9 @@
 
 ## What Is This
 
-Career-Ops turns any AI coding CLI into a full job search command center. Instead of manually tracking applications in a spreadsheet, you get an AI-powered pipeline that:
+Rendure is a fork of Career-Ops that turns any AI coding CLI into a full job search command center. It keeps the original workflow and attribution, but swaps the CV generation path to a RenderCV-based pipeline with tailoring and QA steps.
+
+Instead of manually tracking applications in a spreadsheet, you get an AI-powered pipeline that:
 
 - **Evaluates offers** with a structured A-F scoring system (10 weighted dimensions)
 - **Generates tailored PDFs** -- ATS-optimized CVs customized per job description
@@ -52,13 +54,20 @@ Career-Ops turns any AI coding CLI into a full job search command center. Instea
 - **Processes in batch** -- evaluate 10+ offers in parallel with sub-agents
 - **Tracks everything** in a single source of truth with integrity checks
 
-> **Important: This is NOT a spray-and-pray tool.** Career-ops is a filter -- it helps you find the few offers worth your time out of hundreds. The system strongly recommends against applying to anything scoring below 4.0/5. Your time is valuable, and so is the recruiter's. Always review before submitting.
+> **Important: This is NOT a spray-and-pray tool.** Rendure is a filter -- it helps you find the few offers worth your time out of hundreds. The system strongly recommends against applying to anything scoring below 4.0/5. Your time is valuable, and so is the recruiter's. Always review before submitting.
 
-Career-ops is agentic: Claude Code navigates career pages with Playwright, evaluates fit by reasoning about your CV vs the job description (not keyword matching), and adapts your resume per listing.
+Rendure is agentic: Claude Code navigates career pages with Playwright, evaluates fit by reasoning about your CV vs the job description, and adapts your resume per listing.
 
 > **Heads up: the first evaluations won't be great.** The system doesn't know you yet. Feed it context -- your CV, your career story, your proof points, your preferences, what you're good at, what you want to avoid. The more you nurture it, the better it gets. Think of it as onboarding a new recruiter: the first week they need to learn about you, then they become invaluable.
 
-Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored CVs, and land a Head of Applied AI role. [Read the full case study](https://santifer.io/career-ops-system).
+Built on top of the original Career-Ops system by Santiago Fernández de Valderrama. This fork keeps upstream attribution while adapting the CV pipeline and templates for a RenderCV `sb2nov` workflow.
+
+## Fork Notes
+
+- Original project: `https://github.com/santifer/career-ops`
+- Fork name: `Rendure`
+- Compatibility: existing slash commands still use the `/career-ops` namespace
+- Main fork change: tailored RenderCV generation with explicit QA and `sb2nov`
 
 ## Features
 
@@ -79,7 +88,7 @@ Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/santifer/career-ops.git
+git clone https://github.com/KaustubhTrivedi/career-ops.git
 cd career-ops && npm install
 npx playwright install chromium   # Required for PDF generation
 
@@ -88,10 +97,13 @@ npm run doctor                     # Validates all prerequisites
 
 # 3. Configure
 cp config/profile.example.yml config/profile.yml  # Edit with your details
+cp examples/cv-example.md cv.md
+cp examples/cv.example.yaml cv.yaml
+cp examples/story-bank.example.md interview-prep/story-bank.md
 cp templates/portals.example.yml portals.yml       # Customize companies
 
 # 4. Add your CV
-# Create cv.md in the project root with your CV in markdown
+# Replace the example files with your own CV and story bank content
 
 # 5. Personalize with Claude
 claude   # Open Claude Code in this directory
@@ -183,9 +195,10 @@ Features: 6 filter tabs, 4 sort modes, grouped/flat view, lazy-loaded previews, 
 ## Project Structure
 
 ```
-career-ops/
+rendure/
 ├── CLAUDE.md                    # Agent instructions
-├── cv.md                        # Your CV (create this)
+├── cv.md                        # Your prose CV (local, gitignored)
+├── cv.yaml                      # Your RenderCV source (local, gitignored)
 ├── article-digest.md            # Your proof points (optional)
 ├── config/
 │   └── profile.example.yml      # Template for your profile
@@ -209,7 +222,7 @@ career-ops/
 ├── output/                      # Generated PDFs (gitignored)
 ├── fonts/                       # Space Grotesk + DM Sans
 ├── docs/                        # Setup, customization, architecture
-└── examples/                    # Sample CV, report, proof points
+└── examples/                    # Sample CVs, story bank, report, proof points
 ```
 
 ## Tech Stack
@@ -221,7 +234,7 @@ career-ops/
 ![Bubble Tea](https://img.shields.io/badge/Bubble_Tea-FF75B5?style=flat&logo=go&logoColor=white)
 
 - **Agent**: Claude Code with custom skills and modes
-- **PDF**: Playwright/Puppeteer + HTML template
+- **PDF**: RenderCV + `sb2nov` + QA-guided YAML tailoring
 - **Scanner**: Playwright + Greenhouse API + WebSearch
 - **Dashboard**: Go + Bubble Tea + Lipgloss (Catppuccin Mocha theme)
 - **Data**: Markdown tables + YAML config + TSV batch files
@@ -230,13 +243,13 @@ career-ops/
 
 - **[cv-santiago](https://github.com/santifer/cv-santiago)** -- The portfolio website (santifer.io) with AI chatbot, LLMOps dashboard, and case studies. If you need a portfolio to showcase alongside your job search, fork it and make it yours.
 
-## About the Author
+## Attribution
 
-I'm Santiago -- Head of Applied AI, former founder (built and sold a business that still runs with my name on it). I built career-ops to manage my own job search. It worked: I used it to land my current role.
+Rendure is forked from Career-Ops by Santiago Fernández de Valderrama.
 
-My portfolio and other open source projects → [santifer.io](https://santifer.io)
-
-☕ [Buy me a coffee](https://buymeacoffee.com/santifer) if career-ops helped your job search.
+- Original author and project: [santifer.io](https://santifer.io), `https://github.com/santifer/career-ops`
+- This fork keeps the upstream workflow philosophy, documentation lineage, and MIT license attribution.
+- Fork-specific work focuses on RenderCV-based tailoring, QA, and updated resume templates.
 
 ## Star History
 
@@ -250,7 +263,7 @@ My portfolio and other open source projects → [santifer.io](https://santifer.i
 
 ## Disclaimer
 
-**career-ops is a local, open-source tool — NOT a hosted service.** By using this software, you acknowledge:
+**Rendure is a local, open-source tool — NOT a hosted service.** By using this software, you acknowledge:
 
 1. **You control your data.** Your CV, contact info, and personal data stay on your machine and are sent directly to the AI provider you choose (Anthropic, OpenAI, etc.). We do not collect, store, or have access to any of your data.
 2. **You control the AI.** The default prompts instruct the AI not to auto-submit applications, but AI models can behave unpredictably. If you modify the prompts or use different models, you do so at your own risk. **Always review AI-generated content for accuracy before submitting.**
@@ -261,11 +274,11 @@ See [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md) for full details. This software i
 
 ## Contributors
 
-<a href="https://github.com/santifer/career-ops/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=santifer/career-ops" />
+<a href="https://github.com/KaustubhTrivedi/career-ops/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=KaustubhTrivedi/career-ops" />
 </a>
 
-Got hired using career-ops? [Share your story!](https://github.com/santifer/career-ops/issues/new?template=i-got-hired.yml)
+Got hired using Rendure? [Share your story!](https://github.com/KaustubhTrivedi/career-ops/issues/new?template=i-got-hired.yml)
 
 ## License
 
