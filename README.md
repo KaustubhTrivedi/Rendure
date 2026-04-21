@@ -272,12 +272,6 @@ Rendure is forked from Career-Ops by Santiago Fernández de Valderrama.
 
 See [LEGAL_DISCLAIMER.md](LEGAL_DISCLAIMER.md) for full details. This software is provided under the [MIT License](LICENSE) "as is", without warranty of any kind.
 
-## Contributors
-
-<a href="https://github.com/KaustubhTrivedi/career-ops/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=KaustubhTrivedi/career-ops" />
-</a>
-
 Got hired using Rendure? [Share your story!](https://github.com/KaustubhTrivedi/career-ops/issues/new?template=i-got-hired.yml)
 
 ## License
