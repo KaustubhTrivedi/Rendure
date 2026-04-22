@@ -6,14 +6,16 @@
 2. Read `config/profile.yml` for candidate name
 3. Get the JD — from context, pasted text, or URL
 4. Detect paper format from company location: US/Canada → `letter`, elsewhere → `a4`
-5. Run **Stage 1: Tailoring Agent** → produce tailored YAML
-6. Add `design: theme: sb2nov` to the YAML (preserve if already present)
-7. Write YAML to `/tmp/cv-{candidate}-{company}.yaml`
-8. Run **Stage 2: QA Agent** → audit the YAML against the JD
-9. Apply all high-priority improvements to the YAML in-place
-10. Run: `rendercv render /tmp/cv-{candidate}-{company}.yaml -d {abs_project_root}/design.yaml --pdf-path {abs_output_path} --dont-generate-markdown`
-11. Report: PDF path, QA keyword coverage score
-12. Update tracker: change PDF column from ❌ to ✅ if offer is already registered
+5. Run **Stage 1: Tailoring Agent** with `job_description` + `rendercv_yaml_resume` → produce tailored YAML
+6. Run **Stage 2: QA Agent** with `job_description` + generated YAML → audit the YAML against the JD
+7. Compute a JD-to-resume score for the current output (0–100)
+8. If the score is below the stop threshold or QA flags high-priority issues, feed the QA feedback back into Stage 1 and regenerate
+9. Repeat the Tailor → QA loop until the score meets the stop threshold, high-priority issues are cleared, or the loop reaches 4 passes
+10. Add `design: theme: sb2nov` to the final YAML (preserve if already present)
+11. Write YAML to `/tmp/cv-{candidate}-{company}.yaml`
+12. Run: `rendercv render /tmp/cv-{candidate}-{company}.yaml -d {abs_project_root}/design.yaml --pdf-path {abs_output_path} --dont-generate-markdown`
+13. Report: PDF path, QA keyword coverage score, JD-to-resume score
+14. Update tracker: change PDF column from ❌ to ✅ if offer is already registered
 
 Where:
 - `{candidate}` = `cv.name` from profile.yml normalized to kebab-case lowercase (e.g. "Alex Chen" → "alex-chen")
@@ -152,6 +154,19 @@ Provide structured instructions for improving the resume:
 1. Do not fabricate information
 2. Do not rewrite the entire resume — provide targeted instructions only
 3. Every suggestion must be actionable and grounded
+
+### QA Step 5 — JD-to-Resume Score
+
+Compute a `jd_to_resume_score` from 0–100 for the current resume iteration.
+
+Use it to decide whether another pass is needed:
+- `score >= 90` and no high-priority issues → stop
+- `score 80-89` → stop unless there are clear high-priority gaps
+- `score < 80` → continue another pass if passes remain
+
+The score should be based on role alignment, ATS keyword coverage, skimmability, impact clarity, and truthfulness risk.
+
+The QA agent must return a clear `continue_iteration` boolean.
 
 ---
 

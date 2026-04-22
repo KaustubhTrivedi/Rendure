@@ -50,6 +50,7 @@ layer.
 ## Behavioral Rules
 
 - Treat raw JD text or a job URL as the full auto-pipeline path unless the user explicitly asks for evaluation only.
+- In auto-pipeline, route the PDF step through `/career-ops-pdf` when available so tailoring and QA run as explicit subagents.
 - Keep all personalization in `config/profile.yml`, `modes/_profile.md`, `article-digest.md`, or `portals.yml`.
 - Never verify a job’s live status with generic web fetch when Playwright is available.
 - Never submit an application for the user.

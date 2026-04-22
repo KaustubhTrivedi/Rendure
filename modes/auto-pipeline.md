@@ -24,7 +24,20 @@ Guardar la evaluación completa en `reports/{###}-{company-slug}-{YYYY-MM-DD}.md
 Include Block G in the saved report. Add `**Legitimacy:** {tier}` to the report header.
 
 ## Paso 3 — Generar PDF
-Ejecutar el pipeline completo de `pdf` (leer `modes/pdf.md`).
+Ejecutar el pipeline completo de `pdf` (leer `modes/pdf.md`) **a traves del comando built-in `/career-ops-pdf` cuando este disponible**.
+
+Pasar explícitamente:
+- `job_description` = JD extraído en Paso 0
+- `rendercv_yaml_resume` = `cv.yaml` base del proyecto
+
+El modo `pdf` se encarga internamente del loop:
+Resume Tailor → Resume QA → score JD-to-resume → corrección/reintento (máximo 4 pasadas).
+
+**Regla de orquestación (OpenCode):**
+- Si estás en OpenCode y existe el comando `.opencode/commands/career-ops-pdf.md`, úsalo como la ruta preferida para este paso.
+- Eso debe lanzar subagentes separados y visibles para Tailoring y QA.
+- Mantén la orquestación principal en auto-pipeline, pero delega la generación del CV al flujo de `/career-ops-pdf`.
+- Solo usa implementación inline como fallback si el comando built-in no está disponible.
 
 ## Paso 4 — Draft Application Answers (solo si score >= 4.5)
 

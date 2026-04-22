@@ -62,10 +62,12 @@ Then paste a job offer URL or description. Rendure will automatically evaluate i
 | Evaluate an offer | Paste a URL or JD text |
 | Search for offers | `/career-ops scan` |
 | Process pending URLs | `/career-ops pipeline` |
-| Generate a PDF | `/career-ops pdf` |
+| Generate a PDF | `/career-ops pdf` or `/career-ops-pdf {JD or URL}` |
 | Batch evaluate | `/career-ops batch` |
 | Check tracker status | `/career-ops tracker` |
 | Fill application form | `/career-ops apply` |
+
+`/career-ops-pdf` now explicitly launches separate subagents for resume tailoring and resume QA before rendering the final PDF.
 
 ## Verify Setup
 
