@@ -74,7 +74,6 @@ The orchestrator manages parallelism, state, retries, and resume.
 
 ```
 cv.md                    →  Evaluation context
-cv.yaml                  →  RenderCV PDF source
 article-digest.md        →  Proof points for matching
 config/profile.yml       →  Candidate identity
 portals.yml              →  Scanner configuration

@@ -1,6 +1,6 @@
 # Codex Setup
 
-Rendure supports Codex through the root `AGENTS.md` file.
+Career-Ops supports Codex through the root `AGENTS.md` file.
 
 If your Codex client reads project instructions automatically, `AGENTS.md`
 is enough for routing and behavior. Codex should reuse the same checked-in
@@ -44,13 +44,12 @@ npx playwright install chromium
 | Project evaluation | `modes/project.md` |
 
 The key point: Codex support is additive. It should route into the existing
-Rendure modes and scripts rather than introducing a parallel automation
+Career-Ops modes and scripts rather than introducing a parallel automation
 layer.
 
 ## Behavioral Rules
 
 - Treat raw JD text or a job URL as the full auto-pipeline path unless the user explicitly asks for evaluation only.
-- In auto-pipeline, route the PDF step through `/career-ops-pdf` when available so tailoring and QA run as explicit subagents.
 - Keep all personalization in `config/profile.yml`, `modes/_profile.md`, `article-digest.md`, or `portals.yml`.
 - Never verify a job’s live status with generic web fetch when Playwright is available.
 - Never submit an application for the user.

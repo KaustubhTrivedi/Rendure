@@ -1,7 +1,7 @@
 {
-  "name": "rendure",
-  "version": "1.0.0",
-  "description": "Rendure: an AI-powered job search pipeline forked from career-ops",
+  "name": "career-ops",
+  "version": "1.6.0",
+  "description": "AI-powered job search pipeline built on Claude Code",
   "scripts": {
     "doctor": "node doctor.mjs",
     "verify": "node verify-pipeline.mjs",
@@ -14,7 +14,8 @@
     "update": "node update-system.mjs apply",
     "rollback": "node update-system.mjs rollback",
     "liveness": "node check-liveness.mjs",
-    "scan": "node scan.mjs"
+    "scan": "node scan.mjs",
+    "gemini:eval": "node gemini-eval.mjs"
   },
   "keywords": [
     "ai",
@@ -23,14 +24,16 @@
     "career",
     "automation"
   ],
-  "author": "Kaustubh Trivedi (fork), original by Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
-  "homepage": "https://github.com/KaustubhTrivedi/career-ops",
+  "author": "Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
+  "homepage": "https://santifer.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/KaustubhTrivedi/career-ops"
+    "url": "https://github.com/santifer/career-ops"
   },
   "license": "MIT",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^16.4.5",
     "js-yaml": "^4.1.1",
     "playwright": "^1.58.1"
   }
