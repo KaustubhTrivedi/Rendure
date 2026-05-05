@@ -7,7 +7,7 @@ Processa URLs de vagas acumuladas em `data/pipeline.md`. O candidato adiciona UR
 1. **Ler** `data/pipeline.md` → buscar itens `- [ ]` na secao "Pendentes"
 2. **Para cada URL pendente**:
    a. Calcular proximo `REPORT_NUM` sequencial (ler `reports/`, pegar o numero mais alto + 1)
-   b. **Extrair JD** usando Playwright (browser_navigate + browser_snapshot) → WebFetch → WebSearch
+   b. **Extrair JD** usando browser_use → Playwright → WebFetch → WebSearch
    c. Se a URL nao for acessivel → marcar como `- [!]` com nota e continuar
    d. **Executar auto-pipeline completa**: Avaliacao A-F → Report .md → PDF (se score >= 3.0) → Tracker
    e. **Mover de "Pendentes" para "Processadas"**: `- [x] #NNN | URL | Empresa | Vaga | Score/5 | PDF ✅/❌`
@@ -35,7 +35,8 @@ Processa URLs de vagas acumuladas em `data/pipeline.md`. O candidato adiciona UR
 
 ## Deteccao inteligente de JD a partir da URL
 
-1. **Playwright (preferido):** `browser_navigate` + `browser_snapshot`. Funciona com todas as SPAs.
+1. **browser_use (preferido):** Navegar e ler o JD renderizado. Funciona com todas as SPAs.
+2. **Playwright (fallback):** Se browser_use nao estiver disponivel.
 2. **WebFetch (fallback):** Para paginas estaticas ou quando Playwright nao esta disponivel.
 3. **WebSearch (ultimo recurso):** Buscar em portais secundarios que indexam o JD.
 

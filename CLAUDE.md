@@ -281,12 +281,12 @@ Default modes are in `modes/` (English). Additional language-specific modes are 
 
 ## Offer Verification -- MANDATORY
 
-**NEVER trust WebSearch/WebFetch to verify if an offer is still active.** ALWAYS use Playwright:
-1. `browser_navigate` to the URL
-2. `browser_snapshot` to read content
+**NEVER trust WebSearch/WebFetch to verify if an offer is still active.** ALWAYS use a browser backend:
+1. Prefer `browser_use` for rendered page inspection when available.
+2. Fallback to Playwright if `browser_use` is not inherited.
 3. Only footer/navbar without JD = closed. Title + description + Apply = active.
 
-**Exception for batch workers (`claude -p`):** Playwright is not available in headless pipe mode. Use WebFetch as fallback and mark the report header with `**Verification:** unconfirmed (batch mode)`. The user can verify manually later.
+**Exception for batch workers (`claude -p`):** Browser backends are not available in headless pipe mode. Use WebFetch as fallback and mark the report header with `**Verification:** unconfirmed (batch mode)`. The user can verify manually later.
 
 ---
 

@@ -7,7 +7,7 @@
 1. **読み取り** `data/pipeline.md` → 「未処理」セクションの `- [ ]` アイテムを検索
 2. **各未処理 URL に対して**：
    a. 次の `REPORT_NUM` を連番で計算（`reports/` を読み、最大番号 + 1）
-   b. **JD を抽出** Playwright（browser_navigate + browser_snapshot）→ WebFetch → WebSearch の順で
+   b. **JD を抽出** browser_use → Playwright → WebFetch → WebSearch の順で
    c. URL にアクセスできない場合 → `- [!]` にマークし注記、次へ進む
    d. **完全な auto-pipeline を実行**：評価 A-F → Report .md → PDF（スコア >= 3.0 の場合）→ Tracker
    e. **「未処理」から「処理済み」へ移動**：`- [x] #NNN | URL | 企業名 | 求人タイトル | スコア/5 | PDF ✅/❌`
@@ -35,7 +35,8 @@
 
 ## URL からの JD インテリジェント検出
 
-1. **Playwright（推奨）：** `browser_navigate` + `browser_snapshot`。すべての SPA で動作。
+1. **browser_use（推奨）：** JD をレンダリングして読む。すべての SPA で動作。
+2. **Playwright（フォールバック）：** browser_use が利用できない場合。
 2. **WebFetch（フォールバック）：** 静的ページ、または Playwright が利用できない場合。
 3. **WebSearch（最終手段）：** JD をインデックスしているセカンダリポータルで検索。
 

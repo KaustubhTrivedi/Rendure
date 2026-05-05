@@ -82,7 +82,8 @@ Read `modes/{mode}.md`
 Applies to: `tracker`, `deep`, `training`, `project`, `patterns`, `followup`
 
 ### Modes delegated to subagent:
-For `scan`, `apply` (with Playwright), and `pipeline` (3+ URLs): launch as Agent with the content of `_shared.md` + `modes/{mode}.md` injected into the subagent prompt.
+For `scan`, `apply` (with browser access), and `pipeline` (3+ URLs): launch as Agent with the content of `_shared.md` + `modes/{mode}.md` injected into the subagent prompt.
+Subagents may use inherited `browser_use` automatically when browser work is needed.
 
 ```
 Agent(

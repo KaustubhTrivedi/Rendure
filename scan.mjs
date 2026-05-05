@@ -18,12 +18,14 @@
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { chromium } from 'playwright';
+import { pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 const parseYaml = yaml.load;
 
 // ── Config ──────────────────────────────────────────────────────────
 
 const PORTALS_PATH = 'portals.yml';
+const PROFILE_PATH = 'config/profile.yml';
 const SCAN_HISTORY_PATH = 'data/scan-history.tsv';
 const PIPELINE_PATH = 'data/pipeline.md';
 const APPLICATIONS_PATH = 'data/applications.md';
@@ -398,6 +400,64 @@ function buildTitleFilter(titleFilter) {
   };
 }
 
+// ── Location filter ─────────────────────────────────────────────────
+
+function normalizeText(value) {
+  return (value || '').toString().trim().toLowerCase();
+}
+
+function buildLocationFilter(profile) {
+  const city = normalizeText(profile?.location?.city);
+  const country = normalizeText(profile?.location?.country);
+  const flexibility = normalizeText(profile?.compensation?.location_flexibility);
+  const preferredRegions = [
+    ...(Array.isArray(profile?.location?.regions) ? profile.location.regions : []),
+    ...(Array.isArray(profile?.compensation?.remote_regions) ? profile.compensation.remote_regions : []),
+  ].map(normalizeText).filter(Boolean);
+
+  const allowRemote = /\bremote\b/.test(flexibility);
+  const allowHybrid = /\bhybrid\b/.test(flexibility);
+  const targetTerms = [city, country, ...preferredRegions].filter(Boolean);
+
+  function isArrangementOnly(text) {
+    return text
+      .replace(/\b(remote|hybrid|onsite|on-site|on site)\b/g, ' ')
+      .replace(/[()\[\],;:/|\\-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() === '';
+  }
+
+  function includesAny(text, terms) {
+    return terms.some((term) => {
+      if (!term) return false;
+      if (/^[a-z]{2}$/.test(term)) {
+        return new RegExp(`(^|[^a-z])${term}([^a-z]|$)`, 'i').test(text);
+      }
+      return text.includes(term);
+    });
+  }
+
+  return (job) => {
+    const locationText = normalizeText(job.location);
+    const titleText = normalizeText(job.title);
+    const haystack = `${locationText} ${titleText}`.trim();
+
+    if (!haystack) return true;
+    if (includesAny(haystack, targetTerms)) return true;
+    if (allowRemote && /\bremote\b/.test(haystack)) {
+      return isArrangementOnly(locationText || haystack);
+    }
+    if (allowHybrid && /\bhybrid\b/.test(haystack)) {
+      return isArrangementOnly(locationText || haystack);
+    }
+    if (/\bonsite\b/.test(haystack)) return includesAny(haystack, targetTerms);
+
+    // If no location signal is present, keep the role rather than discarding
+    // potentially valid listings from weak career pages.
+    return !locationText;
+  };
+}
+
 // ── Dedup ───────────────────────────────────────────────────────────
 
 function loadSeenUrls() {
@@ -526,8 +586,12 @@ async function main() {
   }
 
   const config = parseYaml(readFileSync(PORTALS_PATH, 'utf-8'));
+  const profile = existsSync(PROFILE_PATH)
+    ? (parseYaml(readFileSync(PROFILE_PATH, 'utf-8')) || {})
+    : {};
   const companies = config.tracked_companies || [];
   const titleFilter = buildTitleFilter(config.title_filter);
+  const locationFilter = buildLocationFilter(profile);
   const companyKey = (company) => `${company.name}::${company.careers_url || ''}::${company.api || ''}`;
 
   // 2. Filter enabled companies and split into API/browser scan paths
@@ -565,6 +629,10 @@ async function main() {
 
     for (const job of jobs) {
       if (!titleFilter(job.title)) {
+        totalFiltered++;
+        continue;
+      }
+      if (!locationFilter(job)) {
         totalFiltered++;
         continue;
       }
@@ -667,7 +735,13 @@ async function main() {
   console.log('→ Share results and get help: https://discord.gg/8pRpHETxa4');
 }
 
-main().catch(err => {
-  console.error('Fatal:', err.message);
-  process.exit(1);
-});
+const isEntrypoint = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntrypoint) {
+  main().catch(err => {
+    console.error('Fatal:', err.message);
+    process.exit(1);
+  });
+}
+
+export { buildLocationFilter, buildTitleFilter, normalizeText };

@@ -194,7 +194,8 @@ In deutschen Stellenanzeigen und Vertragsverhandlungen tauchen Begriffe auf, die
 |------|---------|
 | WebSearch | Vergütungs-Recherche, Trends, Unternehmenskultur, LinkedIn-Kontakte, Fallback für Stellenanzeigen |
 | WebFetch | Fallback, um Stellenanzeigen aus statischen Seiten zu extrahieren |
-| Playwright | Prüfen, ob Stellenanzeigen noch aktiv sind (browser_navigate + browser_snapshot), Stellenanzeigen aus SPAs extrahieren. **KRITISCH: NIEMALS 2+ Agenten parallel mit Playwright starten — sie teilen sich eine Browser-Instanz** |
+| browser_use | Bevorzugter Browser-Backend (headless Playwright). Stellenanzeigen prüfen, gerenderten JD extrahieren, Formulare lesen. **KRITISCH: NIEMALS 2+ Browser-Agents parallel.** |
+| Playwright | Fallback-Browser-Backend, wenn browser_use nicht verfügbar. |
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | Temporäres HTML für PDF, applications.md, Reports .md |
 | Edit | Tracker aktualisieren |

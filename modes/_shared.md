@@ -121,7 +121,8 @@ After detecting archetype, read `modes/_profile.md` for the user's specific fram
 |------|-----|
 | WebSearch | Comp research, trends, company culture, LinkedIn contacts, fallback for JDs |
 | WebFetch | Fallback for extracting JDs from static pages |
-| Playwright | Verify offers (browser_navigate + browser_snapshot). **NEVER 2+ agents with Playwright in parallel.** |
+| browser_use | Preferred browser backend (headless Playwright). Verify offers, extract rendered JDs, read forms. **NEVER 2+ browser agents in parallel.** |
+| Playwright | Fallback browser backend when browser_use is unavailable. |
 | Read | cv.md, _profile.md, article-digest.md, cv-template.html |
 | Write | Temporary HTML for PDF, applications.md, reports .md |
 | Edit | Update tracker |
