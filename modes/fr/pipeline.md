@@ -7,7 +7,7 @@ Traite les URLs d'offres accumulees dans `data/pipeline.md`. Le candidat ajoute 
 1. **Lire** `data/pipeline.md` -> trouver les items `- [ ]` dans la section "En attente" / "Pending" / "Pendientes"
 2. **Pour chaque URL en attente** :
    a. Calculer le prochain `REPORT_NUM` sequentiel (lire `reports/`, prendre le numero le plus eleve + 1)
-   b. **Extraire l'offre** avec browser_use -> Playwright -> WebFetch -> WebSearch
+   b. **Extraire l'offre** avec Playwright (`browser_navigate` + `browser_snapshot`) -> WebFetch -> WebSearch
    c. Si l'URL n'est pas accessible -> marquer comme `- [!]` avec une note et continuer
    d. **Executer l'auto-pipeline complet** : Evaluation A-F -> Report .md -> PDF (si score >= 3.0) -> Tracker
    e. **Deplacer de "En attente" vers "Traitees"** : `- [x] #NNN | URL | Entreprise | Role | Score/5 | PDF oui/non`
@@ -35,8 +35,7 @@ Traite les URLs d'offres accumulees dans `data/pipeline.md`. Le candidat ajoute 
 
 ## Detection intelligente de l'offre depuis l'URL
 
-1. **browser_use (prefere) :** Naviguer et lire le JD rendu. Fonctionne avec toutes les SPAs.
-2. **Playwright (fallback) :** Si browser_use n'est pas disponible.
+1. **Playwright (prefere) :** `browser_navigate` + `browser_snapshot`. Fonctionne avec toutes les SPAs.
 2. **WebFetch (fallback) :** Pour les pages statiques ou quand Playwright n'est pas disponible.
 3. **WebSearch (dernier recours) :** Chercher sur des portails secondaires qui indexent l'offre.
 

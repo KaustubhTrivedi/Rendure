@@ -198,8 +198,7 @@ Dans les offres et negociations francophones, certains termes n'existent pas sur
 |-------|-------|
 | WebSearch | Recherche remuneration, tendances, culture d'entreprise, contacts LinkedIn, fallback offres |
 | WebFetch | Fallback pour extraire les offres depuis des pages statiques |
-| browser_use | Preferred browser backend (headless Playwright). Verifier si les offres sont actives, extraire JD rendu, lire les formulaires. **CRITIQUE : JAMAIS 2+ agents avec browser en parallele.** |
-| Playwright | Fallback browser backend quand browser_use n'est pas disponible. |
+| Playwright | Verifier si les offres sont actives (browser_navigate + browser_snapshot), extraire les offres depuis des SPAs. **CRITIQUE : JAMAIS 2+ agents en parallele avec Playwright -- ils partagent la meme instance navigateur** |
 | Read | cv.md, article-digest.md, cv-template.html |
 | Write | HTML temporaire pour PDF, applications.md, reports .md |
 | Edit | Mettre a jour le tracker |

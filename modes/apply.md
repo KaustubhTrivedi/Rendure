@@ -4,9 +4,8 @@ Interactive mode for when the candidate is filling out an application form in Ch
 
 ## Requirements
 
-- **Best with browser_use**: In visible mode, the candidate sees the browser and the agent can interact with the page using inherited browser_use access.
-- **Fallback Playwright**: If browser_use is not inherited, use Playwright in visible mode.
-- **Without browser access**: the candidate shares a screenshot or pastes the questions manually.
+- **Best with Playwright in visible mode**: In visible mode, the candidate sees the browser and Claude can interact with the page.
+- **Without Playwright**: the candidate shares a screenshot or pastes the questions manually.
 
 ## Workflow
 
@@ -23,11 +22,9 @@ Interactive mode for when the candidate is filling out an application form in Ch
 
 ## Step 1 — Detect the job
 
-**With browser_use:** Use inherited browser access to take a snapshot of the active page. Read title, URL, and visible content.
+**With Playwright:** Take a snapshot of the active page. Read title, URL, and visible content.
 
-**Fallback Playwright:** If browser_use is not inherited, use Playwright for the same.
-
-**Without browser access:** Ask the candidate to:
+**Without Playwright:** Ask the candidate to:
 - Share a screenshot of the form (Read tool can read images)
 - Or paste the form questions as text
 - Or say company + role so we can search for it

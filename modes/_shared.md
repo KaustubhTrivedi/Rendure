@@ -41,7 +41,7 @@ The evaluation uses 6 blocks (A-F) with a global score of 1-5:
 - 4.5+ → Strong match, recommend applying immediately
 - 4.0-4.4 → Good match, worth applying
 - 3.5-3.9 → Decent but not ideal, apply only if specific reason
-- Below 3.5 → Recommend against applying (see Ethical Use in CLAUDE.md)
+- Below 3.5 → Recommend against applying (see Ethical Use in AGENTS.md)
 
 ## Posting Legitimacy (Block G)
 
@@ -121,8 +121,7 @@ After detecting archetype, read `modes/_profile.md` for the user's specific fram
 |------|-----|
 | WebSearch | Comp research, trends, company culture, LinkedIn contacts, fallback for JDs |
 | WebFetch | Fallback for extracting JDs from static pages |
-| browser_use | Preferred browser backend (headless Playwright). Verify offers, extract rendered JDs, read forms. **NEVER 2+ browser agents in parallel.** |
-| Playwright | Fallback browser backend when browser_use is unavailable. |
+| Playwright | Verify offers (browser_navigate + browser_snapshot). **NEVER 2+ agents with Playwright in parallel.** |
 | Read | cv.md, _profile.md, article-digest.md, cv-template.html |
 | Write | Temporary HTML for PDF, applications.md, reports .md |
 | Edit | Update tracker |
